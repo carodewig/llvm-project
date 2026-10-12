@@ -163,7 +163,7 @@ const Init *TGVarScope::getVar(RecordKeeper &Records,
       assert(RV && "Template arg doesn't exist??");
       RV->setUsed(true);
       if (TrackReferenceLocs)
-        RV->addReferenceLoc(NameLoc);
+        Rec->appendValueReferenceLoc(ArgName, NameLoc);
       return VarInit::get(ArgName, RV->getType());
     }
     return Name->getValue() == "NAME"
@@ -181,7 +181,7 @@ const Init *TGVarScope::getVar(RecordKeeper &Records,
       // The variable is a record field?
       if (RecordVal *RV = CurRec->getValue(Name)) {
         if (TrackReferenceLocs)
-          RV->addReferenceLoc(NameLoc);
+          CurRec->appendValueReferenceLoc(Name, NameLoc);
         return VarInit::get(Name, RV->getType());
       }
 
@@ -3333,13 +3333,12 @@ const Init *TGParser::ParseValue(Record *CurRec, const RecTy *ItemType,
       // Add a reference to this field if we know the record class.
       if (TrackReferenceLocs) {
         if (const auto *DI = dyn_cast<DefInit>(Result)) {
-          const RecordVal *V = DI->getDef()->getValue(FieldName);
-          const_cast<RecordVal *>(V)->addReferenceLoc(FieldNameLoc);
+          DI->getDef()->appendValueReferenceLoc(FieldName, FieldNameLoc);
         } else if (const auto *TI = dyn_cast<TypedInit>(Result)) {
           if (const auto *RecTy = dyn_cast<RecordRecTy>(TI->getType())) {
             for (const Record *R : RecTy->getClasses())
-              if (const auto *RV = R->getValue(FieldName))
-                const_cast<RecordVal *>(RV)->addReferenceLoc(FieldNameLoc);
+              if (R->getValue(FieldName))
+                R->appendValueReferenceLoc(FieldName, FieldNameLoc);
           }
         }
       }
