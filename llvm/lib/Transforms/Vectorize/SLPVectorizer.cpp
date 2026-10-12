@@ -541,11 +541,6 @@ public:
   /// favor of runtime alias checks for the current vectorization attempt.
   void setTryRuntimeAliasChecks(bool V) { TryRuntimeAliasChecks = V; }
 
-  /// Resets the runtime alias check data.
-  void resetRuntimeAliasCheckState() {
-    Candidate.resetRuntimeAliasCheckState();
-  }
-
   /// Snapshots RTChecks.BB's body (non-PHI, non-alloca, non-terminator) into
   /// RTOrigBodyOrder in program order, for the scalar fallback.
   void captureRuntimeCheckBodySnapshot();
@@ -3761,15 +3756,6 @@ private:
     DenseSet<unsigned> ExtraBitWidthNodes;
 
   public:
-    /// Resets the runtime alias check data.
-    void resetRuntimeAliasCheckState() {
-      HasRuntimeCheckableBlockers = false;
-      HasNonCheckableMemBlocker = false;
-      RTChecksFinalized = false;
-      RTChecks.clear();
-      RTOrigBodyOrder.clear();
-    }
-
     TreeEntry &getRootNode() {
       assert(!VectorizableTree.empty() &&
              "No graph to get the first node from");
@@ -29868,7 +29854,6 @@ SLPVectorizerPass::vectorizeStoreChainImpl(ArrayRef<Value *> Chain, BoUpSLP &R,
                                            unsigned Idx, unsigned MinVF,
                                            unsigned &Size) {
   Size = 0;
-  R.resetRuntimeAliasCheckState();
   LLVM_DEBUG(dbgs() << "SLP: Analyzing a store chain of length " << Chain.size()
                     << "\n");
   const unsigned Sz = R.getVectorElementSize(Chain[0]);
