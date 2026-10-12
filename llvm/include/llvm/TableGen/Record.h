@@ -1601,9 +1601,9 @@ public:
 private:
   const Init *Name;
   SMLoc Loc; // Source location of definition of name.
-  PointerIntPair<const RecTy *, 2, FieldKind> TyAndKind;
+  PointerIntPair<PointerIntPair<const RecTy *, 1, bool>, 2, FieldKind>
+      TyUsedAndKind;
   const Init *Value;
-  bool IsUsed = false;
 
   /// Reference locations to this record value.
   SmallVector<SMRange, 0> ReferenceLocs;
@@ -1631,16 +1631,18 @@ public:
 
   /// Is this a field where nonconcrete values are okay?
   bool isNonconcreteOK() const {
-    return TyAndKind.getInt() == FK_NonconcreteOK;
+    return TyUsedAndKind.getInt() == FK_NonconcreteOK;
   }
 
   /// Is this a template argument?
   bool isTemplateArg() const {
-    return TyAndKind.getInt() == FK_TemplateArg;
+    return TyUsedAndKind.getInt() == FK_TemplateArg;
   }
 
   /// Get the type of the field value as a RecTy.
-  const RecTy *getType() const { return TyAndKind.getPointer(); }
+  const RecTy *getType() const {
+    return TyUsedAndKind.getPointer().getPointer();
+  }
 
   /// Get the type of the field for printing purposes.
   std::string getPrintType() const;
@@ -1662,8 +1664,12 @@ public:
 
   /// Whether this value is used. Useful for reporting warnings, for example
   /// when a template argument is unused.
-  void setUsed(bool Used) { IsUsed = Used; }
-  bool isUsed() const { return IsUsed; }
+  void setUsed(bool Used) {
+    auto TyAndUsed = TyUsedAndKind.getPointer();
+    TyAndUsed.setInt(Used);
+    TyUsedAndKind.setPointer(TyAndUsed);
+  }
+  bool isUsed() const { return TyUsedAndKind.getPointer().getInt(); }
 
   void dump() const;
 
